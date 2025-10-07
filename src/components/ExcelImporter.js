@@ -9,18 +9,32 @@ const ExcelImporter = ({ onDataImported }) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
+      const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
       const worksheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[worksheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false });
 
       if (jsonData.length > 0) {
         const headers = jsonData[0];
+
+        // ✅ Handle merged cells in the first column
+        let lastValue = null;
         const rows = jsonData.slice(1).map(row => {
           const obj = {};
           headers.forEach((header, index) => {
-            obj[header] = row[index] ?? '';
+            let value = row[index] ?? '';
+
+            // Fill down for first column
+            if (index === 0) {
+              if (value === '') {
+                value = lastValue;
+              } else {
+                lastValue = value;
+              }
+            }
+
+            obj[header] = value;
           });
           return obj;
         });
@@ -34,32 +48,10 @@ const ExcelImporter = ({ onDataImported }) => {
           type: !isNaN(parseFloat(rows[0]?.[header])) ? 'numericColumn' : 'textColumn'
         }));
 
-        // Add formula column if relevant
-        if (headers.includes('quantity') && headers.includes('price')) {
-          columnDefs.push({
-            field: 'total',
-            headerName: 'Total',
-            editable: false,
-            type: 'numericColumn',
-            valueGetter: params => {
-              const quantity = parseFloat(params.data?.quantity) || 0;
-              const price = parseFloat(params.data?.price) || 0;
-              return quantity * price;
-            },
-            valueFormatter: params =>
-              `$${params.value?.toFixed(2) || '0.00'}`
-          });
-
-          rows.forEach(row => {
-            const quantity = parseFloat(row.quantity) || 0;
-            const price = parseFloat(row.price) || 0;
-            row.total = quantity * price;
-          });
-        }
-
         onDataImported({ data: rows, columnDefs });
       }
     };
+
     reader.readAsArrayBuffer(file);
   }, [onDataImported]);
 

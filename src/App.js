@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState ,useRef} from 'react';
 import ExcelImporter from './components/ExcelImporter';
 import ColumnSelector from './components/ColumnSelector';
 import ColumnManager from './components/ColumnManager';
 import DataGrid from './components/DataGrid';
 import LineCharts from './charts/LineCharts';
+import WordReport from './components/WordReport';
 
 const App = () => {
   const [rowData, setRowData] = useState([]);
@@ -33,6 +34,9 @@ const App = () => {
 
   const [selectedColumns2, setSelectedColumns2] = useState([]);
   const [showChart2, setShowChart2] = useState(false);
+
+  const chart1Ref = useRef(null);
+  const chart2Ref = useRef(null);
 
   const [gridApi, setGridApi] = useState(null);
 
@@ -133,15 +137,7 @@ const App = () => {
       }, 0);
     }
 
-    if (['quantity', 'price'].includes(params.colDef.field)) {
-      setTimeout(() => {
-        params.api.refreshCells({
-          rowNodes: [params.node],
-          columns: ['total'],
-          force: true
-        });
-      }, 0);
-    }
+    
   };
 
   // Chart data generator
@@ -171,10 +167,89 @@ const App = () => {
     });
   };
 
+  const exportChartAsImage = (chartRef) => {
+    const svg = chartRef.current.querySelector("svg");
+    if (!svg) return null;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(svgBlob);
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = svg.clientWidth;
+        canvas.height = svg.clientHeight;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/png")); // base64 PNG
+      };
+      img.src = url;
+    });
+  };
+
+  // const handleSubmit = async ()=>{
+  //   try {
+  //     console.log(rowData)
+  //     debugger;
+  //     const req_body = {
+  //       "columns":columnDefs,
+  //       "rows":rowData
+  //     }
+  //     const resp = await fetch('http://localhost:8069/create_temp_mon', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify(req_body), // Send rowData from state
+  //     });
+  //     if (!resp.ok) {
+  //       throw new Error(`HTTP error! Status: ${resp.status}`);
+  //     }
+  //     const data = await resp.json();
+  //     console.log('Response:', data);
+  //     return data;
+  //   } catch (error) {
+  //     console.error('Fetch error:', error);
+  //     throw error;
+  //   }
+  // }
+  const handleSubmit = async () => {
+  try {
+    const chart1Image = await exportChartAsImage(chart1Ref);
+    const chart2Image = await exportChartAsImage(chart2Ref);
+
+    const req_body = {
+      columns: columnDefs,
+      rows: rowData,
+      chart1: chart1Image, // base64 string
+      chart2: chart2Image
+    };
+
+    const resp = await fetch("http://localhost:8069/create_temp_mon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req_body),
+    });
+
+    if (!resp.ok) {
+      throw new Error(`HTTP error! Status: ${resp.status}`);
+    }
+    const data = await resp.json();
+    console.log("Response:", data);
+    return data;
+  } catch (error) {
+    console.error("Fetch error:", error);
+    throw error;
+  }
+};
+
   return (
     <div style={{ padding: '20px' }}>
       <h2>Temperature Monitoring</h2>
-
+      <WordReport rows={rowData} columns={columnDefs}/>
       <ExcelImporter onDataImported={onDataImported} />
 
       <ColumnManager 
@@ -214,16 +289,24 @@ const App = () => {
       />
 
       <LineCharts
+        ref={chart1Ref}
         data={getChartData(selectedColumns1)}
         selectedColumns={selectedColumns1}
         showChart={showChart1}
       />
 
       <LineCharts
+        ref={chart2Ref}
         data={getChartData(selectedColumns2)}
         selectedColumns={selectedColumns2}
         showChart={showChart2}
       />
+      <button 
+        onClick={handleSubmit} 
+        style={{ padding: '8px 15px', backgroundColor: '#28a745', color: 'white', border: 'none', borderRadius: '3px', marginRight: '10px' }}
+      >
+        Submit
+      </button>
     </div>
   );
 };

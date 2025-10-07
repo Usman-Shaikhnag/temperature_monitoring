@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
 import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-quartz.css';
-import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+
+import { ModuleRegistry, AllCommunityModule, themeMaterial, themeQuartz } from 'ag-grid-community';
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 const DataGrid = ({ 
@@ -20,15 +19,16 @@ const DataGrid = ({
   }), []);
 
   return (
-    <div className="ag-theme-quartz-dark" style={{ height: '450px', width: '100%' }}>
+    <div style={{ height: '450px', width: '100%' }}>
       <AgGridReact
+        theme={themeQuartz}
         rowData={rowData}
         columnDefs={columnDefs}
         defaultColDef={defaultColDef}
         onCellValueChanged={onCellValueChanged}
         onGridReady={onGridReady}
         rowSelection="multiple"
-        cellSelection={true}
+        // cellSelection={true}
         animateRows={true}
         pagination={true}
         paginationPageSize={10}

@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
-const LineCharts = ({ data, selectedColumns, showChart }) => {
+const LineCharts = forwardRef(({ data, selectedColumns, showChart }, ref) => {
   if (!showChart) return null;
 
   return (
-    <div style={{ marginTop: '30px' }}>
+    <div style={{ marginTop: '30px' }} ref={ref}>
       <h3>Line Chart Visualization</h3>
       <LineChart width={800} height={400} data={data}>
         <CartesianGrid strokeDasharray="3 3" />
@@ -20,12 +20,12 @@ const LineCharts = ({ data, selectedColumns, showChart }) => {
             dataKey={col}
             stroke={`hsl(${index * 60}, 70%, 50%)`}
             strokeWidth={2}
-            dot={{ r: 0.5 }}
+            dot={{ r: 0.4 }}
           />
         ))}
       </LineChart>
     </div>
   );
-};
+});
 
 export default LineCharts;
