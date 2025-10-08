@@ -28,12 +28,16 @@ const DataGrid = ({
         onCellValueChanged={onCellValueChanged}
         onGridReady={onGridReady}
         rowSelection="multiple"
-        // cellSelection={true}
         animateRows={true}
         pagination={true}
         paginationPageSize={10}
         paginationPageSizeSelector={[10,20]}
         rowHeight={40}
+        
+        // ✅ Add tooltip configuration
+        tooltipShowDelay={500}           // Show tooltip after 500ms
+        tooltipHideDelay={10000}         // Hide after 10 seconds
+        tooltipInteraction={true}        // Allow interaction with tooltip
       />
     </div>
   );

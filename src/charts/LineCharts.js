@@ -9,7 +9,7 @@ const LineCharts = forwardRef(({ data, selectedColumns, showChart }, ref) => {
       <h3>Line Chart Visualization</h3>
       <LineChart width={800} height={400} data={data}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="name" />
+        <XAxis dataKey="name" type="category"/>
         <YAxis />
         <Tooltip />
         <Legend />
